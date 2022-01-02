@@ -1,3 +1,6 @@
+import zlib
+
+
 class AlreadyLockedError(Exception):
     def __init__(self, lock_id, ):
         self.lock_id = lock_id
@@ -9,6 +12,7 @@ class PgAdivisoryLock:
     def __init__(self, connection, lock_id, wait_for_lock=False):
         self.conn = connection
         self.lock_id = lock_id
+        self.lock_cs = zlib.crc32(lock_id)
         self.wait_for_lock = wait_for_lock
         self.is_acquired_lock = None
 
@@ -29,13 +33,13 @@ class PgAdivisoryLock:
             self.__release_lock()
 
     def __acquire_lock(self):
-        self.conn.execute("SELECT pg_try_advisory_lock(%s, %s)", (self.lock_id,self.lock_id,))
+        self.conn.execute("SELECT pg_try_advisory_lock(%s, %s)", (self.lock_cs, self.lock_cs,))
         return self.conn.fetchone()
 
     def __wait_for_lock(self):
-        self.conn.execute("SELECT pg_advisory_lock(%s, %s)", (self.lock_id,self.lock_id,))
+        self.conn.execute("SELECT pg_advisory_lock(%s, %s)", (self.lock_cs, self.lock_cs,))
         return self.conn.fetchone()
 
     def __release_lock(self):
-        self.conn.execute("SELECT pg_advisory_unlock(%s, %s)", (self.lock_id,self.lock_id,))
+        self.conn.execute("SELECT pg_advisory_unlock(%s, %s)", (self.lock_cs, self.lock_cs,))
         return self.conn.fetchone()

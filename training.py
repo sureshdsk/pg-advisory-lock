@@ -19,5 +19,5 @@ def main(job_id):
 
 
 if __name__ == '__main__':
-    job_id = int(sys.argv[1])
+    job_id = sys.argv[1]
     main(job_id)
